@@ -1,63 +1,57 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>DH ACCESS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>DH ACCESS</title>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: black;
-      height: 100%;
-      overflow: hidden;
-    }
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  height: 100%;
+  overflow: hidden;
+}
 
-    video {
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+video {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-    .mensaje {
-      position: fixed;
-      bottom: 25px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: white;
-      font-family: Arial;
-      background: rgba(0,0,0,0.6);
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-weight: bold;
-    }
+.mensaje {
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.6);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-family: Arial;
+  font-weight: bold;
+}
 
-    .status {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      color: lime;
-      font-family: monospace;
-      font-size: 12px;
-      background: rgba(0,0,0,0.5);
-      padding: 5px;
-    }
-  </style>
+.status {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  color: lime;
+  font-family: monospace;
+  font-size: 12px;
+}
+</style>
 </head>
 
 <body>
 
-<!-- 🎥 VIDEO -->
 <video id="video" autoplay muted playsinline loop>
-  <source src="video.mp4" type="video/mp4">
+<source src="video.mp4" type="video/mp4">
 </video>
 
-<!-- 💬 MENSAJE -->
 <div class="mensaje">Toca para activar audio 🔊</div>
-
-<!-- 📊 STATUS -->
 <div class="status" id="status">Cargando...</div>
 
 <script type="module">
@@ -65,7 +59,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔥 CONFIG FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
   authDomain: "nfc-control-b33f4.firebaseapp.com",
@@ -78,17 +71,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 📌 NFC ID
-const params = new URLSearchParams(location.search);
-const id = params.get("id");
-
-// 📱 dispositivo
+const id = new URLSearchParams(location.search).get("id");
 const deviceId = navigator.userAgent;
 
 const status = document.getElementById("status");
 
-// 🎬 video control
-function playVideo() {
+function enableVideo() {
   const video = document.getElementById("video");
   const msg = document.querySelector(".mensaje");
 
@@ -96,16 +84,20 @@ function playVideo() {
     video.muted = false;
     video.play();
     msg.style.display = "none";
+
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(()=>{});
+    }
   });
 }
 
-// 🔐 lógica NFC
-async function checkNFC() {
+async function check() {
 
   try {
 
     if (!id) {
-      status.innerText = "❌ Sin NFC ID";
+      status.innerText = "⚠️ Sin NFC (modo libre)";
+      enableVideo();
       return;
     }
 
@@ -114,39 +106,38 @@ async function checkNFC() {
 
     if (!snap.exists()) {
       status.innerText = "❌ NFC no existe";
+      enableVideo();
       return;
     }
 
     const data = snap.data();
 
-    // 🟢 primer uso
     if (!data.device) {
       await setDoc(ref, {
         device: deviceId,
         status: "activo"
       });
 
-      status.innerText = "🟢 Activado por primera vez";
-      playVideo();
+      status.innerText = "🟢 Activado";
+      enableVideo();
       return;
     }
 
-    // 🟢 mismo dispositivo
     if (data.device === deviceId) {
       status.innerText = "🟢 Acceso permitido";
-      playVideo();
+      enableVideo();
       return;
     }
 
-    // 🔴 otro dispositivo
     status.innerText = "⛔ Bloqueado en otro dispositivo";
 
   } catch (e) {
     status.innerText = "⚠️ Error sistema";
+    enableVideo();
   }
 }
 
-checkNFC();
+check();
 
 </script>
 
