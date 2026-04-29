@@ -22,14 +22,39 @@
       height: 100%;
       object-fit: cover;
     }
+
+    .mensaje {
+      position: fixed;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-family: Arial;
+      font-size: 14px;
+      opacity: 0.7;
+      z-index: 2;
+    }
   </style>
 </head>
 
 <body>
 
-<video autoplay muted playsinline loop>
+<video id="v" autoplay muted playsinline loop>
   <source src="video.mp4" type="video/mp4">
 </video>
+
+<div class="mensaje">Toca la pantalla para activar sonido</div>
+
+<script>
+  const v = document.getElementById("v");
+  const mensaje = document.querySelector(".mensaje");
+
+  document.addEventListener("click", () => {
+    v.muted = false;
+    v.play();
+    mensaje.style.display = "none";
+  });
+</script>
 
 </body>
 </html>
