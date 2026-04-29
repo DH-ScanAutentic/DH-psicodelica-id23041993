@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <title>DH ACCESS</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      background: black;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .overlay {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="overlay"></div>
+
+<video autoplay muted playsinline loop>
+  <source src="https://videotourl.com/videos/1777419114537-dfb82441-9d2c-480a-98da-0763225566cb.mp4" type="video/mp4">
+</video>
+
+<script>
+  document.addEventListener("click", function () {
+    let elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    }
+  });
+</script>
+
+</body>
+</html>
