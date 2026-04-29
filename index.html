@@ -60,33 +60,94 @@
 
 <div class="mensaje">TAP TO ENABLE AUDIO 🔊</div>
 
-<script>
+<script type="module">
+// 🔥 FIREBASE
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// ⚙️ CONFIGURA ESTO CON TU FIREBASE
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROJECT_ID",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 📌 leer NFC del link (?id=NFC001)
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+// 📱 ID del dispositivo (simple)
+const deviceId = navigator.userAgent;
+
+async function checkAccess() {
+
+  if (!id) {
+    document.body.innerHTML = "❌ Sin acceso NFC";
+    return;
+  }
+
+  const ref = doc(db, "nfc_links", id);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    document.body.innerHTML = "❌ NFC no existe";
+    return;
+  }
+
+  const data = snap.data();
+
+  // 🟢 Primera vez (libre)
+  if (data.device === "") {
+
+    await setDoc(ref, {
+      ...data,
+      device: deviceId,
+      status: "bloqueado"
+    });
+
+    startVideo();
+    return;
+  }
+
+  // 🟢 Mismo dispositivo
+  if (data.device === deviceId) {
+    startVideo();
+    return;
+  }
+
+  // 🔴 Otro dispositivo
+  document.body.innerHTML = "⛔ ACCESO BLOQUEADO";
+}
+
+function startVideo() {
   const v = document.getElementById("v");
   const mensaje = document.querySelector(".mensaje");
 
   document.addEventListener("click", () => {
 
-    // 🔊 Activar sonido
     v.muted = false;
     v.play();
 
-    // 📳 Vibración tipo NFC
     if (navigator.vibrate) {
       navigator.vibrate(50);
     }
 
-    // 📱 Pantalla completa
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen();
     }
 
-    // 🧼 Ocultar mensaje con animación
     mensaje.style.opacity = "0";
     setTimeout(() => {
       mensaje.style.display = "none";
     }, 500);
 
   });
+}
+
+checkAccess();
 </script>
 
 </body>
