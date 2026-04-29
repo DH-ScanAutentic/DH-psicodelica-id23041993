@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel NFC PRO</title>
+  <title>PANEL NFC PRO</title>
 
   <style>
     body {
       margin: 0;
       font-family: Arial;
-      background: #0f0f0f;
+      background: #111;
       color: white;
       padding: 15px;
     }
@@ -17,7 +17,7 @@
     h2 { text-align: center; }
 
     .card {
-      background: #1c1c1c;
+      background: #1e1e1e;
       padding: 12px;
       margin: 10px 0;
       border-radius: 10px;
@@ -27,15 +27,15 @@
     .bad { color: #ff4444; }
 
     button {
-      padding: 8px 12px;
+      padding: 8px;
+      margin-top: 8px;
       border: none;
       border-radius: 8px;
-      margin-top: 8px;
       cursor: pointer;
     }
 
     .reset {
-      background: #ff4444;
+      background: red;
       color: white;
     }
 
@@ -51,7 +51,7 @@
 
 <h2>🔥 PANEL NFC PRO</h2>
 
-<button class="refresh" onclick="loadData()">🔄 Actualizar</button>
+<button class="refresh" onclick="load()">🔄 Actualizar</button>
 
 <div id="list"></div>
 
@@ -59,14 +59,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔥 TU FIREBASE CONFIG
 const firebaseConfig = {
-    apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
-    authDomain: "nfc-control-b33f4.firebaseapp.com",
-    projectId: "nfc-control-b33f4",
-    storageBucket: "nfc-control-b33f4.firebasestorage.app",
-    messagingSenderId: "970163715550",
-    appId: "1:970163715550:web:59011e23ca08a213a5714f"
+  apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
+  authDomain: "nfc-control-b33f4.firebaseapp.com",
+  projectId: "nfc-control-b33f4",
+  storageBucket: "nfc-control-b33f4.firebasestorage.app",
+  messagingSenderId: "970163715550",
+  appId: "1:970163715550:web:59011e23ca08a213a5714f"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -74,7 +73,7 @@ const db = getFirestore(app);
 
 const list = document.getElementById("list");
 
-window.loadData = async function () {
+window.load = async function () {
 
   list.innerHTML = "Cargando...";
 
@@ -84,19 +83,17 @@ window.loadData = async function () {
 
   snap.forEach(docSnap => {
 
-    const data = docSnap.data();
-    const estado = data.device ? "bloqueado" : "libre";
+    const d = docSnap.data();
+    const estado = d.device ? "bloqueado" : "libre";
 
     list.innerHTML += `
       <div class="card">
         <b>${docSnap.id}</b><br>
-        Estado: ${estado === "libre" 
-          ? '<span class="ok">LIBRE</span>' 
-          : '<span class="bad">BLOQUEADO</span>'}
+        Estado: ${estado === "libre" ? '<span class="ok">LIBRE</span>' : '<span class="bad">USADO</span>'}
         <br>
-        Device: ${data.device || "—"}
+        Device: ${d.device || "—"}
 
-        <button class="reset" onclick="resetNFC('${docSnap.id}')">
+        <button class="reset" onclick="reset('${docSnap.id}')">
           🔄 Reset
         </button>
       </div>
@@ -104,7 +101,7 @@ window.loadData = async function () {
   });
 }
 
-window.resetNFC = async function(id) {
+window.reset = async function(id) {
 
   const ref = doc(db, "nfc_links", id);
 
@@ -113,11 +110,11 @@ window.resetNFC = async function(id) {
     status: "libre"
   });
 
-  alert("Reseteado: " + id);
-  loadData();
+  alert("Reset: " + id);
+  load();
 }
 
-loadData();
+load();
 </script>
 
 </body>
