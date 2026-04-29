@@ -2,8 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#000000">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DH ACCESS</title>
 
   <style>
@@ -28,20 +27,9 @@
 
 <body>
 
-<video id="video" autoplay muted playsinline loop>
-  <source src="./video.mp4" type="video/mp4">
+<video autoplay muted playsinline loop>
+  <source src="video.mp4" type="video/mp4">
 </video>
-
-<script>
-  const video = document.getElementById("video");
-
-  // Forzar reproducción (clave en móviles)
-  video.play().catch(() => {
-    document.addEventListener("click", () => {
-      video.play();
-    });
-  });
-</script>
 
 </body>
 </html>
