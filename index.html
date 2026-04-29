@@ -1,6 +1,108 @@
 <!DOCTYPE html>
-<html>
-<body style="background:red; color:white; font-size:30px;">
-FUNCIONA EL HTML ✔
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <title>DH ACCESS</title>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .mensaje {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 18px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 8px;
+      color: white;
+      font-family: Arial;
+      font-size: 16px;
+      font-weight: bold;
+      z-index: 2;
+      animation: parpadeo 1.5s infinite;
+    }
+
+    @keyframes parpadeo {
+      0% { opacity: 0.9; }
+      50% { opacity: 0.4; }
+      100% { opacity: 0.9; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ===================== -->
+<!-- 🎥 1. VIDEO PRINCIPAL -->
+<!-- ===================== -->
+<video id="v" autoplay muted playsinline loop>
+  <source src="video.mp4" type="video/mp4">
+</video>
+
+<!-- ===================== -->
+<!-- 💬 2. MENSAJE -->
+<!-- ===================== -->
+<div class="mensaje">TAP TO ENABLE AUDIO 🔊</div>
+
+<!-- ===================== -->
+<!-- 🔥 3. FIREBASE (FASE 2 - SOLO PRUEBA) -->
+<!-- ===================== -->
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🔧 CONFIG FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
+  authDomain: "nfc-control-b33f4.firebaseapp.com",
+  projectId: "nfc-control-b33f4",
+  storageBucket: "nfc-control-b33f4.firebasestorage.app",
+  messagingSenderId: "970163715550",
+  appId: "1:970163715550:web:59011e23ca08a213a5714f"
+};
+
+// 🚀 INICIALIZAR
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 🧪 PRUEBA DE CONEXIÓN (NO AFECTA VIDEO)
+async function testFirebase() {
+
+  try {
+
+    const snap = await getDocs(collection(db, "nfc_links"));
+
+    console.log("🔥 Firebase conectado. Documentos:", snap.size);
+
+  } catch (error) {
+
+    console.log("❌ Error Firebase:", error);
+
+  }
+}
+
+testFirebase();
+
+</script>
+
 </body>
 </html>
