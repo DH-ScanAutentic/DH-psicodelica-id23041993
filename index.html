@@ -60,6 +60,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 🔥 FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
   authDomain: "nfc-control-b33f4.firebaseapp.com",
@@ -72,48 +73,68 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// 📌 NFC ID
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
+
+// 📱 dispositivo
 const deviceId = navigator.userAgent;
 
+// 🚀 FUNCIÓN SEGURA
 async function checkAccess() {
 
-  if (!id) {
-    document.body.innerHTML = "❌ SIN NFC";
-    return;
-  }
+  try {
 
-  const ref = doc(db, "nfc_links", id);
-  const snap = await getDoc(ref);
+    if (!id) {
+      document.body.innerHTML = "❌ SIN NFC";
+      return;
+    }
 
-  if (!snap.exists()) {
-    document.body.innerHTML = "❌ NFC NO EXISTE";
-    return;
-  }
+    const ref = doc(db, "nfc_links", id);
+    const snap = await getDoc(ref);
 
-  const data = snap.data();
+    if (!snap.exists()) {
+      document.body.innerHTML = "❌ NFC NO EXISTE";
+      return;
+    }
 
-  if (data.device === "") {
-    await setDoc(ref, {
-      ...data,
-      device: deviceId,
-      status: "bloqueado"
-    });
-  }
+    const data = snap.data();
 
-  if (data.device !== "" && data.device !== deviceId) {
+    // 🟢 primera vez
+    if (!data.device || data.device === "") {
+
+      await setDoc(ref, {
+        ...data,
+        device: deviceId,
+        status: "bloqueado"
+      });
+
+      startVideo();
+      return;
+    }
+
+    // 🟢 mismo dispositivo
+    if (data.device === deviceId) {
+      startVideo();
+      return;
+    }
+
+    // 🔴 otro dispositivo
     document.body.innerHTML = "⛔ ACCESO BLOQUEADO";
-    return;
-  }
 
-  startVideo();
+  } catch (error) {
+    console.log("ERROR FIREBASE:", error);
+    document.body.innerHTML = "⚠️ ERROR DE CONEXIÓN";
+  }
 }
 
+// 🎬 video
 function startVideo() {
   const v = document.getElementById("v");
   const msg = document.querySelector(".mensaje");
 
   document.addEventListener("click", () => {
+
     v.muted = false;
     v.play();
 
