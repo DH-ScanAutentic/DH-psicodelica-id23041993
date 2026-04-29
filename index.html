@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
   <title>DH ACCESS</title>
 
   <style>
@@ -12,6 +13,7 @@
       background: black;
       height: 100%;
       overflow: hidden;
+      font-family: Arial, sans-serif;
     }
 
     video {
@@ -21,6 +23,21 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: none;
+    }
+
+    .pantalla {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      background: black;
+      color: #00ff88;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      font-size: 18px;
+      text-align: center;
     }
 
     .mensaje {
@@ -29,29 +46,67 @@
       width: 100%;
       text-align: center;
       color: white;
-      font-family: Arial;
       font-size: 14px;
-      opacity: 0.7;
-      z-index: 2;
+      opacity: 0.8;
+      display: none;
     }
   </style>
 </head>
 
 <body>
 
+<div class="pantalla" id="pantalla">
+  <div id="texto">ESCANEANDO...</div>
+</div>
+
 <video id="v" autoplay muted playsinline loop>
   <source src="video.mp4" type="video/mp4">
 </video>
 
-<div class="mensaje">Toca la pantalla para activar sonido</div>
+<div class="mensaje" id="mensaje">TOCA PARA ACTIVAR AUDIO</div>
 
 <script>
-  const v = document.getElementById("v");
-  const mensaje = document.querySelector(".mensaje");
+  const texto = document.getElementById("texto");
+  const pantalla = document.getElementById("pantalla");
+  const video = document.getElementById("v");
+  const mensaje = document.getElementById("mensaje");
 
+  // 📳 Vibración tipo NFC
+  window.addEventListener("load", () => {
+    if (navigator.vibrate) {
+      navigator.vibrate([80, 40, 80]);
+    }
+
+    // Secuencia tipo sistema
+    setTimeout(() => {
+      texto.innerText = "CHIP DETECTADO...";
+    }, 800);
+
+    setTimeout(() => {
+      texto.innerText = "VALIDANDO ACCESO...";
+    }, 1800);
+
+    setTimeout(() => {
+      texto.innerText = "ACCESO CONCEDIDO";
+    }, 2800);
+
+    // Mostrar video
+    setTimeout(() => {
+      pantalla.style.display = "none";
+      video.style.display = "block";
+      mensaje.style.display = "block";
+    }, 3500);
+  });
+
+  // 👆 Activar sonido + fullscreen
   document.addEventListener("click", () => {
-    v.muted = false;
-    v.play();
+    video.muted = false;
+    video.play();
+
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    }
+
     mensaje.style.display = "none";
   });
 </script>
