@@ -49,7 +49,7 @@ video {
 
 <!-- 🎥 VIDEO -->
 <video id="video" autoplay muted playsinline loop>
-<source src="video.mp4" type="video/mp4">
+  <source src="video.mp4" type="video/mp4">
 </video>
 
 <!-- 💬 MENSAJE -->
@@ -63,6 +63,7 @@ video {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 🔥 FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
   authDomain: "nfc-control-b33f4.firebaseapp.com",
@@ -78,7 +79,7 @@ const db = getFirestore(app);
 // 📌 NFC ID
 const id = new URLSearchParams(location.search).get("id");
 
-// 📱 ID REAL DEL DISPOSITIVO (FIJO)
+// 📱 ID ÚNICO DEL DISPOSITIVO
 let deviceId = localStorage.getItem("device_id");
 
 if (!deviceId) {
@@ -88,7 +89,7 @@ if (!deviceId) {
 
 const status = document.getElementById("status");
 
-// 🎬 VIDEO
+// 🎬 ACTIVAR VIDEO
 function enableVideo() {
 
   const video = document.getElementById("video");
@@ -107,7 +108,33 @@ function enableVideo() {
   });
 }
 
-// 🔐 NFC CONTROL REAL
+// 🔒 BLOQUEAR VISUALMENTE
+function bloquear() {
+
+  const video = document.getElementById("video");
+
+  // detener y ocultar video
+  video.pause();
+  video.style.display = "none";
+
+  // fondo negro total
+  document.body.style.background = "black";
+
+  // mensaje grande
+  const bloqueo = document.createElement("div");
+  bloqueo.innerText = "ACCESO DENEGADO";
+  bloqueo.style.position = "fixed";
+  bloqueo.style.top = "50%";
+  bloqueo.style.left = "50%";
+  bloqueo.style.transform = "translate(-50%, -50%)";
+  bloqueo.style.color = "red";
+  bloqueo.style.fontSize = "26px";
+  bloqueo.style.fontWeight = "bold";
+
+  document.body.appendChild(bloqueo);
+}
+
+// 🔐 CONTROL NFC
 async function check() {
 
   try {
@@ -136,7 +163,7 @@ async function check() {
         status: "activo"
       });
 
-      status.innerText = "🟢 Activado por primera vez";
+      status.innerText = "🟢 Activado";
       enableVideo();
       return;
     }
@@ -148,8 +175,9 @@ async function check() {
       return;
     }
 
-    // 🔴 otro dispositivo
-    status.innerText = "⛔ Bloqueado en otro dispositivo";
+    // 🔴 BLOQUEADO
+    status.innerText = "⛔ Bloqueado";
+    bloquear();
 
   } catch (e) {
     status.innerText = "⚠️ Error sistema";
