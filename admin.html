@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DH ADMIN</title>
+<title>DH ADMIN PRO</title>
 
 <style>
 body {
@@ -19,7 +19,6 @@ body {
   text-align: center;
   font-weight: bold;
   font-size: 18px;
-  border-bottom: 1px solid #222;
 }
 
 .controls {
@@ -33,62 +32,34 @@ button {
   padding: 12px;
   border: none;
   border-radius: 8px;
-  font-weight: bold;
   background: #1f1f1f;
   color: white;
 }
 
-button:active {
-  transform: scale(0.95);
-}
-
-.list {
-  padding: 10px;
-}
-
 .card {
   background: #1a1a1a;
-  margin-bottom: 10px;
+  margin: 10px;
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #2a2a2a;
 }
 
-.id {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.status {
-  margin-top: 5px;
-  font-size: 13px;
-}
-
-.libre {
-  color: lime;
-}
-
-.ocupado {
-  color: orange;
-}
-
-.btn-reset {
-  margin-top: 10px;
-  background: red;
-}
+.ok { color: lime; }
+.warn { color: orange; }
+.danger { color: red; }
 </style>
 </head>
 
 <body>
 
-<div class="header">⚙️ DH NFC CONTROL</div>
+<div class="header">🚀 DH CONTROL PRO</div>
 
 <div class="controls">
   <button onclick="load()">Actualizar</button>
   <button onclick="resetAll()">Reset Todo</button>
 </div>
 
-<div class="list" id="list">Cargando...</div>
+<div id="list"></div>
 
 <script type="module">
 
@@ -108,44 +79,61 @@ const list = document.getElementById("list");
 
 window.load = async function() {
 
-  list.innerHTML = "Cargando...";
+  list.innerHTML = "";
 
   const snap = await getDocs(collection(db, "nfc_links"));
-
-  list.innerHTML = "";
 
   snap.forEach(d => {
 
     const data = d.data();
 
-    const estado = data.device ? "ocupado" : "libre";
+    let estado = "🟢 LIBRE";
+    let color = "ok";
+
+    if (data.device) {
+      estado = "🔒 EN USO";
+      color = "warn";
+    }
+
+    if (data.intentos > 0) {
+      estado = "🚫 INTENTOS DETECTADOS";
+      color = "danger";
+    }
 
     list.innerHTML += `
       <div class="card">
-        <div class="id">${d.id}</div>
-        <div class="status ${estado}">
-          ${data.device ? "🔒 EN USO" : "🟢 LIBRE"}
-        </div>
-        <button class="btn-reset" onclick="reset('${d.id}')">
-          Reset NFC
-        </button>
+        <b>${d.id}</b><br><br>
+
+        📱 Device:<br>
+        ${data.device || "—"}<br><br>
+
+        🕒 Activado:<br>
+        ${data.fecha || "—"}<br><br>
+
+        🔢 Accesos: ${data.accesos || 0}<br>
+        🚫 Intentos: ${data.intentos || 0}<br><br>
+
+        <span class="${color}">${estado}</span><br><br>
+
+        <button onclick="reset('${d.id}')">Reset</button>
       </div>
     `;
   });
 }
 
-// reset individual
 window.reset = async function(id) {
 
   await setDoc(doc(db, "nfc_links", id), {
     device: "",
-    status: "libre"
+    status: "libre",
+    accesos: 0,
+    intentos: 0,
+    fecha: ""
   });
 
   load();
 }
 
-// reset total
 window.resetAll = async function() {
 
   const snap = await getDocs(collection(db, "nfc_links"));
@@ -153,15 +141,16 @@ window.resetAll = async function() {
   snap.forEach(async (d) => {
     await setDoc(doc(db, "nfc_links", d.id), {
       device: "",
-      status: "libre"
+      status: "libre",
+      accesos: 0,
+      intentos: 0,
+      fecha: ""
     });
   });
 
-  alert("Todos los NFC fueron liberados");
   load();
 }
 
-// carga inicial
 load();
 
 </script>
