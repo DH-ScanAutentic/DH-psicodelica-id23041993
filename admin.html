@@ -1,22 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>ADMIN NFC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DH ADMIN</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0f0f0f;
+  color: white;
+}
+
+.header {
+  padding: 15px;
+  background: black;
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+  border-bottom: 1px solid #222;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+
+button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  background: #1f1f1f;
+  color: white;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+.list {
+  padding: 10px;
+}
+
+.card {
+  background: #1a1a1a;
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #2a2a2a;
+}
+
+.id {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.status {
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+.libre {
+  color: lime;
+}
+
+.ocupado {
+  color: orange;
+}
+
+.btn-reset {
+  margin-top: 10px;
+  background: red;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Control NFC</h2>
+<div class="header">⚙️ DH NFC CONTROL</div>
 
-<button onclick="load()">Cargar NFC</button>
-<button onclick="resetAll()">Reset todo</button>
+<div class="controls">
+  <button onclick="load()">Actualizar</button>
+  <button onclick="resetAll()">Reset Todo</button>
+</div>
 
-<div id="list"></div>
+<div class="list" id="list">Cargando...</div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
@@ -41,16 +118,23 @@ window.load = async function() {
 
     const data = d.data();
 
+    const estado = data.device ? "ocupado" : "libre";
+
     list.innerHTML += `
-      <div style="margin:10px;padding:10px;border:1px solid #ccc">
-        <b>${d.id}</b><br>
-        Device: ${data.device || "libre"}<br>
-        <button onclick="reset('${d.id}')">Reset</button>
+      <div class="card">
+        <div class="id">${d.id}</div>
+        <div class="status ${estado}">
+          ${data.device ? "🔒 EN USO" : "🟢 LIBRE"}
+        </div>
+        <button class="btn-reset" onclick="reset('${d.id}')">
+          Reset NFC
+        </button>
       </div>
     `;
   });
 }
 
+// reset individual
 window.reset = async function(id) {
 
   await setDoc(doc(db, "nfc_links", id), {
@@ -61,6 +145,7 @@ window.reset = async function(id) {
   load();
 }
 
+// reset total
 window.resetAll = async function() {
 
   const snap = await getDocs(collection(db, "nfc_links"));
@@ -72,8 +157,12 @@ window.resetAll = async function() {
     });
   });
 
-  alert("Reset completo");
+  alert("Todos los NFC fueron liberados");
+  load();
 }
+
+// carga inicial
+load();
 
 </script>
 
