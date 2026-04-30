@@ -25,15 +25,19 @@ body {
   display: flex;
   gap: 10px;
   padding: 10px;
+  flex-wrap: wrap;
 }
 
-button {
-  flex: 1;
+button, input {
   padding: 12px;
   border: none;
   border-radius: 8px;
   background: #1f1f1f;
   color: white;
+}
+
+button {
+  cursor: pointer;
   transition: 0.2s;
 }
 
@@ -52,10 +56,7 @@ button:active {
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #2a2a2a;
-  opacity: 0;
-  transform: translateY(10px);
-  animation: fadeIn 0.4s forwards;
-  transition: 0.2s;
+  animation: fadeIn 0.4s;
 }
 
 .card:hover {
@@ -64,25 +65,13 @@ button:active {
 }
 
 @keyframes fadeIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from {opacity: 0; transform: translateY(10px);}
+  to {opacity: 1; transform: translateY(0);}
 }
 
 .ok { color: lime; }
 .warn { color: orange; }
 .danger { color: red; }
-
-.ok {
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
 </style>
 </head>
 
@@ -93,6 +82,9 @@ button:active {
 <div class="controls">
   <button onclick="resetAll()">Reset Todo</button>
   <button onclick="resetNombres()">Reset Nombres</button>
+
+  <input type="text" id="nuevoID" placeholder="nfc003">
+  <button onclick="agregarNFC()">Agregar NFC</button>
 </div>
 
 <div id="list"></div>
@@ -100,7 +92,7 @@ button:active {
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
@@ -113,13 +105,14 @@ const db = getFirestore(app);
 
 const list = document.getElementById("list");
 
-// nombres
+// 🔥 nombres locales
 let nombres = JSON.parse(localStorage.getItem("nfcNombres")) || {};
 
 function guardarNombres() {
   localStorage.setItem("nfcNombres", JSON.stringify(nombres));
 }
 
+// ✏️ editar nombre (actualiza en tiempo real visual)
 window.editarNombre = function(id) {
   let actual = nombres[id] || "";
   let nuevo = prompt("Nombre para " + id, actual);
@@ -127,18 +120,72 @@ window.editarNombre = function(id) {
   if (nuevo !== null) {
     nombres[id] = nuevo.trim() || "Sin nombre";
     guardarNombres();
+
+    // actualizar solo ese nombre sin recargar todo
+    document.querySelectorAll(`[data-id='${id}'] .nombre`)
+      .forEach(el => el.innerText = nombres[id]);
   }
 }
 
+// ❌ reset nombres
 window.resetNombres = function() {
   if (!confirm("¿Borrar nombres?")) return;
   localStorage.removeItem("nfcNombres");
   nombres = {};
+  renderSnapshot(currentSnap);
 }
 
-// 🔥 TIEMPO REAL
-onSnapshot(collection(db, "nfc_links"), (snap) => {
+// ➕ agregar NFC
+window.agregarNFC = async function() {
+  let id = document.getElementById("nuevoID").value;
 
+  if (!id) return alert("Escribe un ID");
+
+  await setDoc(doc(db, "nfc_links", id), {
+    device: "",
+    status: "libre",
+    accesos: 0,
+    intentos: 0,
+    fecha: ""
+  });
+
+  document.getElementById("nuevoID").value = "";
+}
+
+// 🔁 reset individual
+window.reset = async function(id) {
+  if (!confirm("¿Resetear " + id + "?")) return;
+
+  await setDoc(doc(db, "nfc_links", id), {
+    device: "",
+    status: "libre",
+    accesos: 0,
+    intentos: 0,
+    fecha: ""
+  });
+}
+
+// 🔁 reset total
+window.resetAll = async function() {
+  if (!confirm("¿Resetear todo?")) return;
+
+  const snap = await getDocs(collection(db, "nfc_links"));
+
+  snap.forEach(async (d) => {
+    await setDoc(doc(db, "nfc_links", d.id), {
+      device: "",
+      status: "libre",
+      accesos: 0,
+      intentos: 0,
+      fecha: ""
+    });
+  });
+}
+
+// 🔥 render separado
+let currentSnap = null;
+
+function renderSnapshot(snap) {
   list.innerHTML = "";
 
   snap.forEach(d => {
@@ -161,11 +208,11 @@ onSnapshot(collection(db, "nfc_links"), (snap) => {
     let nombre = nombres[d.id] || "Sin nombre";
 
     list.innerHTML += `
-      <div class="card">
+      <div class="card" data-id="${d.id}">
         <b>${d.id}</b><br><br>
 
-        👤 ${nombre}<br>
-        <button onclick="editarNombre('${d.id}')">✏️</button><br><br>
+        👤 <span class="nombre">${nombre}</span><br>
+        <button onclick="editarNombre('${d.id}')">✏️ Editar</button><br><br>
 
         📱 ${data.device || "—"}<br>
         🕒 ${data.fecha || "—"}<br><br>
@@ -179,38 +226,13 @@ onSnapshot(collection(db, "nfc_links"), (snap) => {
       </div>
     `;
   });
+}
 
+// 🔥 TIEMPO REAL FIREBASE
+onSnapshot(collection(db, "nfc_links"), (snap) => {
+  currentSnap = snap;
+  renderSnapshot(snap);
 });
-
-// reset individual
-window.reset = async function(id) {
-  if (!confirm("¿Resetear " + id + "?")) return;
-
-  await setDoc(doc(db, "nfc_links", id), {
-    device: "",
-    status: "libre",
-    accesos: 0,
-    intentos: 0,
-    fecha: ""
-  });
-}
-
-// reset total
-window.resetAll = async function() {
-  if (!confirm("¿Resetear todo?")) return;
-
-  const snap = await getDocs(collection(db, "nfc_links"));
-
-  snap.forEach(async (d) => {
-    await setDoc(doc(db, "nfc_links", d.id), {
-      device: "",
-      status: "libre",
-      accesos: 0,
-      intentos: 0,
-      fecha: ""
-    });
-  });
-}
 
 </script>
 
