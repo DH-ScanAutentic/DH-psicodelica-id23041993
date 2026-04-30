@@ -64,6 +64,12 @@ button:active {
   box-shadow: 0 0 10px #000;
 }
 
+.link {
+  font-size: 12px;
+  color: #00d4ff;
+  word-break: break-all;
+}
+
 @keyframes fadeIn {
   from {opacity: 0; transform: translateY(10px);}
   to {opacity: 1; transform: translateY(0);}
@@ -105,6 +111,9 @@ const db = getFirestore(app);
 
 const list = document.getElementById("list");
 
+// 🔥 TU LINK BASE
+const baseURL = "https://dh-scanautentic.github.io/DH-psicodelica-id23041993/";
+
 // 🔥 nombres locales
 let nombres = JSON.parse(localStorage.getItem("nfcNombres")) || {};
 
@@ -112,7 +121,7 @@ function guardarNombres() {
   localStorage.setItem("nfcNombres", JSON.stringify(nombres));
 }
 
-// ✏️ editar nombre (actualiza en tiempo real visual)
+// ✏️ editar nombre
 window.editarNombre = function(id) {
   let actual = nombres[id] || "";
   let nuevo = prompt("Nombre para " + id, actual);
@@ -121,10 +130,15 @@ window.editarNombre = function(id) {
     nombres[id] = nuevo.trim() || "Sin nombre";
     guardarNombres();
 
-    // actualizar solo ese nombre sin recargar todo
     document.querySelectorAll(`[data-id='${id}'] .nombre`)
       .forEach(el => el.innerText = nombres[id]);
   }
+}
+
+// 📋 copiar link
+window.copiarLink = function(link) {
+  navigator.clipboard.writeText(link);
+  alert("Link copiado");
 }
 
 // ❌ reset nombres
@@ -165,7 +179,7 @@ window.reset = async function(id) {
   });
 }
 
-// 🔁 reset total
+// 🔁 reset todo
 window.resetAll = async function() {
   if (!confirm("¿Resetear todo?")) return;
 
@@ -182,7 +196,7 @@ window.resetAll = async function() {
   });
 }
 
-// 🔥 render separado
+// 🔥 render principal
 let currentSnap = null;
 
 function renderSnapshot(snap) {
@@ -191,6 +205,11 @@ function renderSnapshot(snap) {
   snap.forEach(d => {
 
     const data = d.data();
+
+    const id = d.id.toLowerCase().trim();
+
+    // 🔥 AQUÍ ESTÁ LA CORRECCIÓN IMPORTANTE
+    const link = baseURL + "?id=" + id;
 
     let estado = "🟢 LIBRE";
     let color = "ok";
@@ -214,6 +233,9 @@ function renderSnapshot(snap) {
         👤 <span class="nombre">${nombre}</span><br>
         <button onclick="editarNombre('${d.id}')">✏️ Editar</button><br><br>
 
+        🔗 <span class="link">${link}</span><br>
+        <button onclick="copiarLink('${link}')">📋 Copiar link</button><br><br>
+
         📱 ${data.device || "—"}<br>
         🕒 ${data.fecha || "—"}<br><br>
 
@@ -228,7 +250,7 @@ function renderSnapshot(snap) {
   });
 }
 
-// 🔥 TIEMPO REAL FIREBASE
+// 🔥 tiempo real Firebase
 onSnapshot(collection(db, "nfc_links"), (snap) => {
   currentSnap = snap;
   renderSnapshot(snap);
