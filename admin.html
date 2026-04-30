@@ -6,7 +6,8 @@
 </head>
 <body>
 
-<h2>Panel NFC</h2>
+<h2>Control NFC</h2>
+
 <button onclick="load()">Cargar NFC</button>
 <button onclick="resetAll()">Reset todo</button>
 
@@ -28,7 +29,6 @@ const db = getFirestore(app);
 
 const list = document.getElementById("list");
 
-// 📊 cargar NFC
 window.load = async function() {
 
   list.innerHTML = "Cargando...";
@@ -37,22 +37,22 @@ window.load = async function() {
 
   list.innerHTML = "";
 
-  snap.forEach(docu => {
+  snap.forEach(d => {
 
-    const d = docu.data();
+    const data = d.data();
 
     list.innerHTML += `
       <div style="margin:10px;padding:10px;border:1px solid #ccc">
-        <b>${docu.id}</b><br>
-        Device: ${d.device || "libre"}<br>
-        <button onclick="reset('${docu.id}')">Reset</button>
+        <b>${d.id}</b><br>
+        Device: ${data.device || "libre"}<br>
+        <button onclick="reset('${d.id}')">Reset</button>
       </div>
     `;
   });
 }
 
-// 🔁 reset individual
 window.reset = async function(id) {
+
   await setDoc(doc(db, "nfc_links", id), {
     device: "",
     status: "libre"
@@ -61,7 +61,6 @@ window.reset = async function(id) {
   load();
 }
 
-// 🔁 reset todo
 window.resetAll = async function() {
 
   const snap = await getDocs(collection(db, "nfc_links"));
