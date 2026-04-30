@@ -34,6 +34,16 @@ button {
   border-radius: 8px;
   background: #1f1f1f;
   color: white;
+  transition: 0.2s;
+}
+
+button:hover {
+  background: #333;
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(0.95);
 }
 
 .card {
@@ -42,11 +52,37 @@ button {
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #2a2a2a;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeIn 0.4s forwards;
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 10px #000;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .ok { color: lime; }
 .warn { color: orange; }
 .danger { color: red; }
+
+.ok {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
 </style>
 </head>
 
@@ -55,8 +91,8 @@ button {
 <div class="header">🚀 DH CONTROL PRO</div>
 
 <div class="controls">
-  <button onclick="load()">Actualizar</button>
   <button onclick="resetAll()">Reset Todo</button>
+  <button onclick="resetNombres()">Reset Nombres</button>
 </div>
 
 <div id="list"></div>
@@ -64,7 +100,7 @@ button {
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
@@ -77,11 +113,33 @@ const db = getFirestore(app);
 
 const list = document.getElementById("list");
 
-window.load = async function() {
+// nombres
+let nombres = JSON.parse(localStorage.getItem("nfcNombres")) || {};
+
+function guardarNombres() {
+  localStorage.setItem("nfcNombres", JSON.stringify(nombres));
+}
+
+window.editarNombre = function(id) {
+  let actual = nombres[id] || "";
+  let nuevo = prompt("Nombre para " + id, actual);
+
+  if (nuevo !== null) {
+    nombres[id] = nuevo.trim() || "Sin nombre";
+    guardarNombres();
+  }
+}
+
+window.resetNombres = function() {
+  if (!confirm("¿Borrar nombres?")) return;
+  localStorage.removeItem("nfcNombres");
+  nombres = {};
+}
+
+// 🔥 TIEMPO REAL
+onSnapshot(collection(db, "nfc_links"), (snap) => {
 
   list.innerHTML = "";
-
-  const snap = await getDocs(collection(db, "nfc_links"));
 
   snap.forEach(d => {
 
@@ -100,18 +158,20 @@ window.load = async function() {
       color = "danger";
     }
 
+    let nombre = nombres[d.id] || "Sin nombre";
+
     list.innerHTML += `
       <div class="card">
         <b>${d.id}</b><br><br>
 
-        📱 Device:<br>
-        ${data.device || "—"}<br><br>
+        👤 ${nombre}<br>
+        <button onclick="editarNombre('${d.id}')">✏️</button><br><br>
 
-        🕒 Activado:<br>
-        ${data.fecha || "—"}<br><br>
+        📱 ${data.device || "—"}<br>
+        🕒 ${data.fecha || "—"}<br><br>
 
-        🔢 Accesos: ${data.accesos || 0}<br>
-        🚫 Intentos: ${data.intentos || 0}<br><br>
+        🔢 ${data.accesos || 0} accesos<br>
+        🚫 ${data.intentos || 0} intentos<br><br>
 
         <span class="${color}">${estado}</span><br><br>
 
@@ -119,9 +179,12 @@ window.load = async function() {
       </div>
     `;
   });
-}
 
+});
+
+// reset individual
 window.reset = async function(id) {
+  if (!confirm("¿Resetear " + id + "?")) return;
 
   await setDoc(doc(db, "nfc_links", id), {
     device: "",
@@ -130,11 +193,11 @@ window.reset = async function(id) {
     intentos: 0,
     fecha: ""
   });
-
-  load();
 }
 
+// reset total
 window.resetAll = async function() {
+  if (!confirm("¿Resetear todo?")) return;
 
   const snap = await getDocs(collection(db, "nfc_links"));
 
@@ -147,11 +210,7 @@ window.resetAll = async function() {
       fecha: ""
     });
   });
-
-  load();
 }
-
-load();
 
 </script>
 
