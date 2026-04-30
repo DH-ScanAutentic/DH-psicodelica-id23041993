@@ -19,6 +19,7 @@ video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: none; /* 🔒 oculto por defecto */
 }
 
 .mensaje {
@@ -32,6 +33,7 @@ video {
   border-radius: 8px;
   font-family: Arial;
   font-weight: bold;
+  display: none;
 }
 
 .status {
@@ -52,11 +54,8 @@ video {
   <source src="video.mp4" type="video/mp4">
 </video>
 
-<!-- 💬 MENSAJE -->
 <div class="mensaje">Toca para activar audio 🔊</div>
-
-<!-- 📊 STATUS -->
-<div class="status" id="status">Cargando...</div>
+<div class="status" id="status">Verificando acceso...</div>
 
 <script type="module">
 
@@ -89,11 +88,32 @@ if (!deviceId) {
 
 const status = document.getElementById("status");
 
-// 🎬 ACTIVAR VIDEO
+// 🔒 BLOQUEO TOTAL
+function bloquear(texto = "ACCESO DENEGADO") {
+
+  document.body.style.background = "black";
+
+  const bloqueo = document.createElement("div");
+  bloqueo.innerText = texto;
+  bloqueo.style.position = "fixed";
+  bloqueo.style.top = "50%";
+  bloqueo.style.left = "50%";
+  bloqueo.style.transform = "translate(-50%, -50%)";
+  bloqueo.style.color = "red";
+  bloqueo.style.fontSize = "26px";
+  bloqueo.style.fontWeight = "bold";
+
+  document.body.appendChild(bloqueo);
+}
+
+// 🎬 ACTIVAR VIDEO SOLO SI TODO OK
 function enableVideo() {
 
   const video = document.getElementById("video");
   const msg = document.querySelector(".mensaje");
+
+  video.style.display = "block";
+  msg.style.display = "block";
 
   document.addEventListener("click", () => {
 
@@ -108,54 +128,31 @@ function enableVideo() {
   });
 }
 
-// 🔒 BLOQUEAR VISUALMENTE
-function bloquear() {
-
-  const video = document.getElementById("video");
-
-  // detener y ocultar video
-  video.pause();
-  video.style.display = "none";
-
-  // fondo negro total
-  document.body.style.background = "black";
-
-  // mensaje grande
-  const bloqueo = document.createElement("div");
-  bloqueo.innerText = "ACCESO DENEGADO";
-  bloqueo.style.position = "fixed";
-  bloqueo.style.top = "50%";
-  bloqueo.style.left = "50%";
-  bloqueo.style.transform = "translate(-50%, -50%)";
-  bloqueo.style.color = "red";
-  bloqueo.style.fontSize = "26px";
-  bloqueo.style.fontWeight = "bold";
-
-  document.body.appendChild(bloqueo);
-}
-
-// 🔐 CONTROL NFC
+// 🔐 CONTROL TOTAL NFC
 async function check() {
 
   try {
 
+    // ❌ SIN ID → BLOQUEADO
     if (!id) {
-      status.innerText = "⚠️ Sin NFC (modo libre)";
-      enableVideo();
+      status.innerText = "⛔ Acceso inválido";
+      bloquear();
       return;
     }
 
     const ref = doc(db, "nfc_links", id);
     const snap = await getDoc(ref);
 
+    // ❌ NO EXISTE
     if (!snap.exists()) {
-      status.innerText = "❌ NFC no existe";
+      status.innerText = "⛔ NFC inválido";
+      bloquear();
       return;
     }
 
     const data = snap.data();
 
-    // 🟢 primer uso
+    // 🟢 PRIMER USO
     if (!data.device) {
 
       await setDoc(ref, {
@@ -168,19 +165,20 @@ async function check() {
       return;
     }
 
-    // 🟢 mismo dispositivo
+    // 🟢 MISMO DISPOSITIVO
     if (data.device === deviceId) {
       status.innerText = "🟢 Acceso permitido";
       enableVideo();
       return;
     }
 
-    // 🔴 BLOQUEADO
+    // 🔴 OTRO DISPOSITIVO
     status.innerText = "⛔ Bloqueado";
     bloquear();
 
   } catch (e) {
-    status.innerText = "⚠️ Error sistema";
+    status.innerText = "⛔ Error";
+    bloquear("ERROR");
   }
 }
 
