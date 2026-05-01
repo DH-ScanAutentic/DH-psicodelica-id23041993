@@ -30,6 +30,7 @@ html, body {
   object-fit: cover;
 }
 
+/* fade iPhone */
 .fade-out {
   opacity: 0;
   transform: scale(1.02);
@@ -72,9 +73,9 @@ video {
 
 <body>
 
-<!-- 🔥 INTRO VIDEO (3s) -->
+<!-- 🔥 INTRO VIDEO -->
 <div id="intro">
-  <video autoplay muted playsinline>
+  <video autoplay muted playsinline preload="auto">
     <source src="https://dh-scanautentic.github.io/DH-psicodelica-id23041993/intro.mp4" type="video/mp4">
   </video>
 </div>
@@ -111,24 +112,38 @@ if (!deviceId) {
 
 const status = document.getElementById("status");
 
-/* 🔥 TRANSICIÓN iPHONE */
+/* 🔥 TRANSICIÓN CORREGIDA */
 function showContent() {
 
   const intro = document.getElementById("intro");
+  const introVideo = intro.querySelector("video");
+
   const video = document.getElementById("video");
   const msg = document.querySelector(".mensaje");
 
-  intro.classList.add("fade-out");
+  // 🔥 forzar carga y reproducción
+  introVideo.play().catch(()=>{});
 
-  setTimeout(() => {
-    intro.style.display = "none";
+  introVideo.oncanplay = () => {
 
-    video.style.display = "block";
-    msg.style.display = "block";
-  }, 400);
+    setTimeout(() => {
+
+      intro.classList.add("fade-out");
+
+      setTimeout(() => {
+        intro.style.display = "none";
+
+        video.style.display = "block";
+        msg.style.display = "block";
+
+      }, 400);
+
+    }, 3000);
+
+  };
 }
 
-/* 🔊 activar audio */
+/* 🔊 audio */
 function enableVideo() {
 
   const video = document.getElementById("video");
@@ -197,10 +212,8 @@ async function check() {
 
       status.innerText = "🟢 Activado";
 
-      setTimeout(() => {
-        showContent();
-        enableVideo();
-      }, 3000);
+      showContent();
+      enableVideo();
 
       return;
     }
@@ -214,10 +227,8 @@ async function check() {
 
       status.innerText = "🟢 Acceso permitido";
 
-      setTimeout(() => {
-        showContent();
-        enableVideo();
-      }, 3000);
+      showContent();
+      enableVideo();
 
       return;
     }
