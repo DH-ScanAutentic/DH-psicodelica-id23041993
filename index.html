@@ -21,6 +21,7 @@ html, body {
   height: 100%;
   background: black;
   z-index: 999;
+  opacity: 1;
   transition: opacity 0.4s ease;
 }
 
@@ -30,13 +31,7 @@ html, body {
   object-fit: cover;
 }
 
-/* fade iPhone */
-.fade-out {
-  opacity: 0;
-  transform: scale(1.02);
-}
-
-/* 🎬 VIDEO PRINCIPAL */
+/* 🎬 VIDEO FINAL */
 video {
   position: fixed;
   width: 100%;
@@ -75,12 +70,12 @@ video {
 
 <!-- 🔥 INTRO VIDEO -->
 <div id="intro">
-  <video autoplay muted playsinline preload="auto">
+  <video id="introVideo" muted playsinline preload="auto">
     <source src="https://dh-scanautentic.github.io/DH-psicodelica-id23041993/intro.mp4" type="video/mp4">
   </video>
 </div>
 
-<!-- 🎬 VIDEO FINAL -->
+<!-- 🎬 VIDEO PRINCIPAL -->
 <video id="video" autoplay muted playsinline loop>
   <source src="video.mp4" type="video/mp4">
 </video>
@@ -112,23 +107,26 @@ if (!deviceId) {
 
 const status = document.getElementById("status");
 
-/* 🔥 TRANSICIÓN CORREGIDA */
+/* 🔥 INTRO SEGURO (ANTI PANTALLA NEGRA) */
 function showContent() {
 
   const intro = document.getElementById("intro");
-  const introVideo = intro.querySelector("video");
+  const introVideo = document.getElementById("introVideo");
 
   const video = document.getElementById("video");
   const msg = document.querySelector(".mensaje");
 
-  // 🔥 forzar carga y reproducción
-  introVideo.play().catch(()=>{});
+  let started = false;
 
-  introVideo.oncanplay = () => {
+  function startIntro() {
+    if (started) return;
+    started = true;
+
+    introVideo.play().catch(()=>{});
 
     setTimeout(() => {
 
-      intro.classList.add("fade-out");
+      intro.style.opacity = "0";
 
       setTimeout(() => {
         intro.style.display = "none";
@@ -139,8 +137,13 @@ function showContent() {
       }, 400);
 
     }, 3000);
+  }
 
-  };
+  // 🔥 cuando cargue el video
+  introVideo.addEventListener("loadeddata", startIntro);
+
+  // 🔥 fallback si Android falla
+  setTimeout(startIntro, 2000);
 }
 
 /* 🔊 audio */
@@ -162,6 +165,7 @@ function enableVideo() {
   });
 }
 
+/* 🚫 BLOQUEO */
 function bloquear(texto = "ACCESO DENEGADO") {
 
   document.body.style.background = "black";
@@ -179,6 +183,7 @@ function bloquear(texto = "ACCESO DENEGADO") {
   document.body.appendChild(bloqueo);
 }
 
+/* 🔥 FIREBASE CHECK */
 async function check() {
 
   try {
@@ -214,7 +219,6 @@ async function check() {
 
       showContent();
       enableVideo();
-
       return;
     }
 
@@ -229,7 +233,6 @@ async function check() {
 
       showContent();
       enableVideo();
-
       return;
     }
 
