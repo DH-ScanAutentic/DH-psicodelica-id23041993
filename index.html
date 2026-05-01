@@ -14,7 +14,7 @@ html, body {
   overflow: hidden;
 }
 
-/* 🔥 INTRO */
+/* 🔥 INTRO GIF */
 #intro {
   position: fixed;
   width: 100%;
@@ -25,7 +25,7 @@ html, body {
   transition: opacity 0.4s ease;
 }
 
-#intro video {
+#intro img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -68,11 +68,9 @@ video {
 
 <body>
 
-<!-- 🔥 INTRO VIDEO -->
+<!-- 🔥 INTRO GIF -->
 <div id="intro">
-  <video id="introVideo" muted playsinline preload="auto">
-    <source src="https://dh-scanautentic.github.io/DH-psicodelica-id23041993/intro.mp4" type="video/mp4">
-  </video>
+  <img src="intro.gif" alt="intro">
 </div>
 
 <!-- 🎬 VIDEO PRINCIPAL -->
@@ -107,43 +105,26 @@ if (!deviceId) {
 
 const status = document.getElementById("status");
 
-/* 🔥 INTRO SEGURO (ANTI PANTALLA NEGRA) */
+/* 🔥 INTRO SUAVE (GIF) */
 function showContent() {
 
   const intro = document.getElementById("intro");
-  const introVideo = document.getElementById("introVideo");
-
   const video = document.getElementById("video");
   const msg = document.querySelector(".mensaje");
 
-  let started = false;
+  setTimeout(() => {
 
-  function startIntro() {
-    if (started) return;
-    started = true;
-
-    introVideo.play().catch(()=>{});
+    intro.style.opacity = "0";
 
     setTimeout(() => {
+      intro.style.display = "none";
 
-      intro.style.opacity = "0";
+      video.style.display = "block";
+      msg.style.display = "block";
 
-      setTimeout(() => {
-        intro.style.display = "none";
+    }, 400);
 
-        video.style.display = "block";
-        msg.style.display = "block";
-
-      }, 400);
-
-    }, 3000);
-  }
-
-  // 🔥 cuando cargue el video
-  introVideo.addEventListener("loadeddata", startIntro);
-
-  // 🔥 fallback si Android falla
-  setTimeout(startIntro, 2000);
+  }, 3000);
 }
 
 /* 🔊 audio */
@@ -183,7 +164,7 @@ function bloquear(texto = "ACCESO DENEGADO") {
   document.body.appendChild(bloqueo);
 }
 
-/* 🔥 FIREBASE CHECK */
+/* 🔥 FIREBASE */
 async function check() {
 
   try {
