@@ -111,7 +111,6 @@ function showContent() {
       video.style.display = "block";
       msg.style.display = "block";
     }, 400);
-
   }, 3000);
 }
 
@@ -169,8 +168,8 @@ async function check() {
     const data = snap.data();
     const video = document.getElementById("video");
 
-    // 🔥 VIDEO DINÁMICO
-    const videoURL = data.video || "video.mp4";
+    // 🔥 VIDEO DESDE /videos/
+    const videoURL = data.video ? "videos/" + data.video : "video.mp4";
     video.innerHTML = `<source src="${videoURL}" type="video/mp4">`;
     video.load();
 
@@ -182,7 +181,7 @@ async function check() {
         fecha: new Date().toLocaleString(),
         accesos: 1,
         intentos: 0,
-        video: videoURL
+        video: data.video || "video.mp4"
       });
 
       status.innerText = "🟢 Activado";
