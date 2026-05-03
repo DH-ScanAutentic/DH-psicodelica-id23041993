@@ -38,12 +38,6 @@ button, input {
 
 button {
   cursor: pointer;
-  transition: 0.2s;
-}
-
-button:hover {
-  background: #333;
-  transform: scale(1.05);
 }
 
 .card {
@@ -60,7 +54,6 @@ button:hover {
   word-break: break-all;
 }
 
-/* 🔥 LOGIN */
 #loginBox {
   padding: 20px;
   text-align: center;
@@ -70,11 +63,9 @@ button:hover {
   display: none;
 }
 
-/* 🔥 PREMIUM */
 #premiumPanel {
   display: none;
 }
-
 </style>
 </head>
 
@@ -96,7 +87,6 @@ button:hover {
   <button onclick="activarBasico()">Modo Básico</button>
 
   <button onclick="resetAll()">Reset Todo</button>
-  <button onclick="resetNombres()">Reset Nombres</button>
 
   <input type="text" id="nuevoID" placeholder="nfc003">
   <button onclick="agregarNFC()">Agregar NFC</button>
@@ -104,7 +94,6 @@ button:hover {
 
 <div id="list"></div>
 
-<!-- 🔥 PREMIUM -->
 <div id="premiumPanel">
   <h2 style="padding:10px;">Panel Visual</h2>
   <div id="contenedorPremium"></div>
@@ -143,40 +132,11 @@ onAuthStateChanged(auth, (user)=>{
   }
 });
 
-// 🔥 TU SISTEMA ORIGINAL (NO TOCADO)
 const list = document.getElementById("list");
 const baseURL = "https://dh-scanautentic.github.io/DH-psicodelica-id23041993/";
 
-let nombres = JSON.parse(localStorage.getItem("nfcNombres")) || {};
-
-function guardarNombres() {
-  localStorage.setItem("nfcNombres", JSON.stringify(nombres));
-}
-
-window.editarNombre = function(id) {
-  let actual = nombres[id] || "";
-  let nuevo = prompt("Nombre para " + id, actual);
-  if (nuevo !== null) {
-    nombres[id] = nuevo.trim() || "Sin nombre";
-    guardarNombres();
-    renderSnapshot(currentSnap);
-  }
-}
-
-window.copiarLink = function(link) {
-  navigator.clipboard.writeText(link);
-  alert("Link copiado");
-}
-
-window.resetNombres = function() {
-  if (!confirm("¿Borrar nombres?")) return;
-  localStorage.removeItem("nfcNombres");
-  nombres = {};
-  renderSnapshot(currentSnap);
-}
-
 window.agregarNFC = async function() {
-  let id = document.getElementById("nuevoID").value;
+  let id = document.getElementById("nuevoID").value.trim();
   if (!id) return alert("Escribe un ID");
 
   await setDoc(doc(db, "nfc_links", id), {
@@ -184,7 +144,8 @@ window.agregarNFC = async function() {
     status: "libre",
     accesos: 0,
     intentos: 0,
-    fecha: ""
+    fecha: "",
+    video: ""
   });
 
   document.getElementById("nuevoID").value = "";
@@ -198,7 +159,8 @@ window.reset = async function(id) {
     status: "libre",
     accesos: 0,
     intentos: 0,
-    fecha: ""
+    fecha: "",
+    video: ""
   });
 }
 
@@ -212,12 +174,23 @@ window.resetAll = async function() {
       status: "libre",
       accesos: 0,
       intentos: 0,
-      fecha: ""
+      fecha: "",
+      video: ""
     });
   });
 }
 
-// 🔥 RENDER ORIGINAL
+// 🔥 NUEVO: GUARDAR VIDEO
+window.guardarVideo = async function(id) {
+  let url = prompt("Pega el link del video o gif");
+  if (!url) return;
+
+  await setDoc(doc(db, "nfc_links", id), {
+    video: url
+  }, { merge: true });
+}
+
+// 🔥 RENDER
 let currentSnap = null;
 
 function renderSnapshot(snap) {
@@ -228,15 +201,17 @@ function renderSnapshot(snap) {
     const id = d.id.toLowerCase().trim();
     const link = baseURL + "?id=" + id;
 
-    let nombre = nombres[d.id] || "Sin nombre";
-
     list.innerHTML += `
       <div class="card">
         <b>${d.id}</b><br>
-        👤 ${nombre}<br>
         🔗 <span class="link">${link}</span><br>
         📱 ${data.device || "—"}<br>
-        🔢 ${data.accesos || 0}
+        ✅ Accesos: ${data.accesos || 0}<br>
+        ❌ Bloqueados: ${data.intentos || 0}<br><br>
+
+        <button onclick="copiarLink('${link}')">Copiar</button>
+        <button onclick="guardarVideo('${d.id}')">Asignar Video</button>
+        <button onclick="reset('${d.id}')">Reset</button>
       </div>
     `;
   });
@@ -244,7 +219,13 @@ function renderSnapshot(snap) {
   cargarPremium(snap);
 }
 
-// 🔥 PREMIUM (NO INTERFIERE)
+// copiar
+window.copiarLink = function(link) {
+  navigator.clipboard.writeText(link);
+  alert("Link copiado");
+}
+
+// 🔥 PREMIUM VISUAL
 window.activarPremium = function(){
   document.getElementById("list").style.display = "none";
   document.getElementById("premiumPanel").style.display = "block";
@@ -260,22 +241,23 @@ function cargarPremium(snap){
   cont.innerHTML = "";
 
   snap.forEach(d=>{
+    const data = d.data();
     const id = d.id.toLowerCase().trim();
     const link = baseURL + "?id=" + id;
 
     cont.innerHTML += `
       <div class="card">
         <h3>${id}</h3>
-        <img src="videos/${id}.gif" width="100%">
+        <video src="${data.video || ""}" width="100%" autoplay muted loop></video>
         <p>${link}</p>
-        <button onclick="copiarLink('${link}')">Copiar</button>
+        <button onclick="guardarVideo('${d.id}')">Cambiar Video</button>
         <button onclick="reset('${d.id}')">Reset</button>
       </div>
     `;
   });
 }
 
-// 🔥 FIREBASE REALTIME
+// 🔥 REALTIME
 onSnapshot(collection(db, "nfc_links"), (snap) => {
   currentSnap = snap;
   renderSnapshot(snap);
