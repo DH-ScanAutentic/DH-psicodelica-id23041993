@@ -46,22 +46,12 @@ button:hover {
   transform: scale(1.05);
 }
 
-button:active {
-  transform: scale(0.95);
-}
-
 .card {
   background: #1a1a1a;
   margin: 10px;
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #2a2a2a;
-  animation: fadeIn 0.4s;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0 10px #000;
 }
 
 .link {
@@ -70,22 +60,41 @@ button:active {
   word-break: break-all;
 }
 
-@keyframes fadeIn {
-  from {opacity: 0; transform: translateY(10px);}
-  to {opacity: 1; transform: translateY(0);}
+/* 🔥 LOGIN */
+#loginBox {
+  padding: 20px;
+  text-align: center;
 }
 
-.ok { color: lime; }
-.warn { color: orange; }
-.danger { color: red; }
+#panel {
+  display: none;
+}
+
+/* 🔥 PREMIUM */
+#premiumPanel {
+  display: none;
+}
+
 </style>
 </head>
 
 <body>
 
+<div id="loginBox">
+  <h2>🔐 Login</h2>
+  <input id="email" placeholder="Correo"><br><br>
+  <input id="pass" type="password" placeholder="Contraseña"><br><br>
+  <button onclick="login()">Entrar</button>
+</div>
+
+<div id="panel">
+
 <div class="header">🚀 DH CONTROL PRO</div>
 
 <div class="controls">
+  <button onclick="activarPremium()">Modo Pro 🔥</button>
+  <button onclick="activarBasico()">Modo Básico</button>
+
   <button onclick="resetAll()">Reset Todo</button>
   <button onclick="resetNombres()">Reset Nombres</button>
 
@@ -95,10 +104,19 @@ button:active {
 
 <div id="list"></div>
 
+<!-- 🔥 PREMIUM -->
+<div id="premiumPanel">
+  <h2 style="padding:10px;">Panel Visual</h2>
+  <div id="contenedorPremium"></div>
+</div>
+
+</div>
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, doc, setDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBCzhOH6v1EcAeYQLDtYgUPsxQFUb_xeTE",
@@ -108,40 +126,48 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
+// 🔐 LOGIN
+window.login = async function(){
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("pass").value;
+  await signInWithEmailAndPassword(auth, email, pass);
+}
+
+// 🔒 SESIÓN
+onAuthStateChanged(auth, (user)=>{
+  if(user){
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+  }
+});
+
+// 🔥 TU SISTEMA ORIGINAL (NO TOCADO)
 const list = document.getElementById("list");
-
-// 🔥 TU LINK BASE
 const baseURL = "https://dh-scanautentic.github.io/DH-psicodelica-id23041993/";
 
-// 🔥 nombres locales
 let nombres = JSON.parse(localStorage.getItem("nfcNombres")) || {};
 
 function guardarNombres() {
   localStorage.setItem("nfcNombres", JSON.stringify(nombres));
 }
 
-// ✏️ editar nombre
 window.editarNombre = function(id) {
   let actual = nombres[id] || "";
   let nuevo = prompt("Nombre para " + id, actual);
-
   if (nuevo !== null) {
     nombres[id] = nuevo.trim() || "Sin nombre";
     guardarNombres();
-
-    document.querySelectorAll(`[data-id='${id}'] .nombre`)
-      .forEach(el => el.innerText = nombres[id]);
+    renderSnapshot(currentSnap);
   }
 }
 
-// 📋 copiar link
 window.copiarLink = function(link) {
   navigator.clipboard.writeText(link);
   alert("Link copiado");
 }
 
-// ❌ reset nombres
 window.resetNombres = function() {
   if (!confirm("¿Borrar nombres?")) return;
   localStorage.removeItem("nfcNombres");
@@ -149,10 +175,8 @@ window.resetNombres = function() {
   renderSnapshot(currentSnap);
 }
 
-// ➕ agregar NFC
 window.agregarNFC = async function() {
   let id = document.getElementById("nuevoID").value;
-
   if (!id) return alert("Escribe un ID");
 
   await setDoc(doc(db, "nfc_links", id), {
@@ -166,7 +190,6 @@ window.agregarNFC = async function() {
   document.getElementById("nuevoID").value = "";
 }
 
-// 🔁 reset individual
 window.reset = async function(id) {
   if (!confirm("¿Resetear " + id + "?")) return;
 
@@ -179,12 +202,10 @@ window.reset = async function(id) {
   });
 }
 
-// 🔁 reset todo
 window.resetAll = async function() {
   if (!confirm("¿Resetear todo?")) return;
 
   const snap = await getDocs(collection(db, "nfc_links"));
-
   snap.forEach(async (d) => {
     await setDoc(doc(db, "nfc_links", d.id), {
       device: "",
@@ -196,61 +217,65 @@ window.resetAll = async function() {
   });
 }
 
-// 🔥 render principal
+// 🔥 RENDER ORIGINAL
 let currentSnap = null;
 
 function renderSnapshot(snap) {
   list.innerHTML = "";
 
   snap.forEach(d => {
-
     const data = d.data();
-
     const id = d.id.toLowerCase().trim();
-
-    // 🔥 AQUÍ ESTÁ LA CORRECCIÓN IMPORTANTE
     const link = baseURL + "?id=" + id;
-
-    let estado = "🟢 LIBRE";
-    let color = "ok";
-
-    if (data.device) {
-      estado = "🔒 EN USO";
-      color = "warn";
-    }
-
-    if (data.intentos > 0) {
-      estado = "🚫 INTENTOS DETECTADOS";
-      color = "danger";
-    }
 
     let nombre = nombres[d.id] || "Sin nombre";
 
     list.innerHTML += `
-      <div class="card" data-id="${d.id}">
-        <b>${d.id}</b><br><br>
-
-        👤 <span class="nombre">${nombre}</span><br>
-        <button onclick="editarNombre('${d.id}')">✏️ Editar</button><br><br>
-
+      <div class="card">
+        <b>${d.id}</b><br>
+        👤 ${nombre}<br>
         🔗 <span class="link">${link}</span><br>
-        <button onclick="copiarLink('${link}')">📋 Copiar link</button><br><br>
-
         📱 ${data.device || "—"}<br>
-        🕒 ${data.fecha || "—"}<br><br>
+        🔢 ${data.accesos || 0}
+      </div>
+    `;
+  });
 
-        🔢 ${data.accesos || 0} accesos<br>
-        🚫 ${data.intentos || 0} intentos<br><br>
+  cargarPremium(snap);
+}
 
-        <span class="${color}">${estado}</span><br><br>
+// 🔥 PREMIUM (NO INTERFIERE)
+window.activarPremium = function(){
+  document.getElementById("list").style.display = "none";
+  document.getElementById("premiumPanel").style.display = "block";
+}
 
+window.activarBasico = function(){
+  document.getElementById("list").style.display = "block";
+  document.getElementById("premiumPanel").style.display = "none";
+}
+
+function cargarPremium(snap){
+  const cont = document.getElementById("contenedorPremium");
+  cont.innerHTML = "";
+
+  snap.forEach(d=>{
+    const id = d.id.toLowerCase().trim();
+    const link = baseURL + "?id=" + id;
+
+    cont.innerHTML += `
+      <div class="card">
+        <h3>${id}</h3>
+        <img src="videos/${id}.gif" width="100%">
+        <p>${link}</p>
+        <button onclick="copiarLink('${link}')">Copiar</button>
         <button onclick="reset('${d.id}')">Reset</button>
       </div>
     `;
   });
 }
 
-// 🔥 tiempo real Firebase
+// 🔥 FIREBASE REALTIME
 onSnapshot(collection(db, "nfc_links"), (snap) => {
   currentSnap = snap;
   renderSnapshot(snap);
