@@ -6,66 +6,28 @@
 <title>DH ADMIN PRO</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #0f0f0f;
-  color: white;
-}
+body { margin:0; font-family:Arial; background:#0f0f0f; color:white; }
+.header { padding:15px; background:black; text-align:center; font-weight:bold; }
+.controls { display:flex; gap:10px; padding:10px; flex-wrap:wrap; }
 
-.header {
-  padding: 15px;
-  background: black;
-  text-align: center;
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.controls {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-  flex-wrap: wrap;
-}
-
-button, input {
-  padding: 12px;
-  border: none;
-  border-radius: 8px;
-  background: #1f1f1f;
-  color: white;
-}
-
-button {
-  cursor: pointer;
+button, select, input {
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#1f1f1f;
+  color:white;
 }
 
 .card {
-  background: #1a1a1a;
-  margin: 10px;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #2a2a2a;
+  background:#1a1a1a;
+  margin:10px;
+  padding:12px;
+  border-radius:10px;
 }
 
-.link {
-  font-size: 12px;
-  color: #00d4ff;
-  word-break: break-all;
-}
+.link { font-size:12px; color:#00d4ff; }
 
-#loginBox {
-  padding: 20px;
-  text-align: center;
-}
-
-#panel {
-  display: none;
-}
-
-#premiumPanel {
-  display: none;
-}
+#panel { display:none; }
 </style>
 </head>
 
@@ -83,28 +45,18 @@ button {
 <div class="header">🚀 DH CONTROL PRO</div>
 
 <div class="controls">
-  <button onclick="activarPremium()">Modo Pro 🔥</button>
-  <button onclick="activarBasico()">Modo Básico</button>
-
-  <button onclick="resetAll()">Reset Todo</button>
-
-  <input type="text" id="nuevoID" placeholder="nfc003">
+  <input id="nuevoID" placeholder="nfc001">
   <button onclick="agregarNFC()">Agregar NFC</button>
 </div>
 
 <div id="list"></div>
-
-<div id="premiumPanel">
-  <h2 style="padding:10px;">Panel Visual</h2>
-  <div id="contenedorPremium"></div>
-</div>
 
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -117,150 +69,74 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// 🔐 LOGIN
-window.login = async function(){
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("pass").value;
-  await signInWithEmailAndPassword(auth, email, pass);
+window.login = async ()=>{
+  await signInWithEmailAndPassword(auth,
+    email.value, pass.value);
 }
 
-// 🔒 SESIÓN
-onAuthStateChanged(auth, (user)=>{
+onAuthStateChanged(auth,(user)=>{
   if(user){
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("panel").style.display = "block";
+    loginBox.style.display="none";
+    panel.style.display="block";
   }
 });
 
-const list = document.getElementById("list");
 const baseURL = "https://dh-scanautentic.github.io/DH-psicodelica-id23041993/";
 
-window.agregarNFC = async function() {
-  let id = document.getElementById("nuevoID").value.trim();
-  if (!id) return alert("Escribe un ID");
+// 🎬 LISTA DE VIDEOS (EDITA SOLO AQUÍ)
+const videos = [
+  "video1.mp4",
+  "promo.mp4",
+  "fiesta.mp4"
+];
 
-  await setDoc(doc(db, "nfc_links", id), {
-    device: "",
-    status: "libre",
-    accesos: 0,
-    intentos: 0,
-    fecha: "",
-    video: ""
+window.agregarNFC = async ()=>{
+  let id = nuevoID.value.trim();
+  if(!id) return alert("Escribe ID");
+
+  await setDoc(doc(db,"nfc_links",id),{
+    device:"",
+    accesos:0,
+    intentos:0,
+    video:""
   });
 
-  document.getElementById("nuevoID").value = "";
+  nuevoID.value="";
 }
 
-window.reset = async function(id) {
-  if (!confirm("¿Resetear " + id + "?")) return;
-
-  await setDoc(doc(db, "nfc_links", id), {
-    device: "",
-    status: "libre",
-    accesos: 0,
-    intentos: 0,
-    fecha: "",
-    video: ""
-  });
+window.setVideo = async (id, video)=>{
+  await setDoc(doc(db,"nfc_links",id),{
+    video:video
+  },{merge:true});
 }
 
-window.resetAll = async function() {
-  if (!confirm("¿Resetear todo?")) return;
-
-  const snap = await getDocs(collection(db, "nfc_links"));
-  snap.forEach(async (d) => {
-    await setDoc(doc(db, "nfc_links", d.id), {
-      device: "",
-      status: "libre",
-      accesos: 0,
-      intentos: 0,
-      fecha: "",
-      video: ""
-    });
-  });
-}
-
-// 🔥 NUEVO: GUARDAR VIDEO
-window.guardarVideo = async function(id) {
-  let url = prompt("Pega el link del video o gif");
-  if (!url) return;
-
-  await setDoc(doc(db, "nfc_links", id), {
-    video: url
-  }, { merge: true });
-}
-
-// 🔥 RENDER
-let currentSnap = null;
-
-function renderSnapshot(snap) {
-  list.innerHTML = "";
-
-  snap.forEach(d => {
-    const data = d.data();
-    const id = d.id.toLowerCase().trim();
-    const link = baseURL + "?id=" + id;
-
-    list.innerHTML += `
-      <div class="card">
-        <b>${d.id}</b><br>
-        🔗 <span class="link">${link}</span><br>
-        📱 ${data.device || "—"}<br>
-        ✅ Accesos: ${data.accesos || 0}<br>
-        ❌ Bloqueados: ${data.intentos || 0}<br><br>
-
-        <button onclick="copiarLink('${link}')">Copiar</button>
-        <button onclick="guardarVideo('${d.id}')">Asignar Video</button>
-        <button onclick="reset('${d.id}')">Reset</button>
-      </div>
-    `;
-  });
-
-  cargarPremium(snap);
-}
-
-// copiar
-window.copiarLink = function(link) {
-  navigator.clipboard.writeText(link);
-  alert("Link copiado");
-}
-
-// 🔥 PREMIUM VISUAL
-window.activarPremium = function(){
-  document.getElementById("list").style.display = "none";
-  document.getElementById("premiumPanel").style.display = "block";
-}
-
-window.activarBasico = function(){
-  document.getElementById("list").style.display = "block";
-  document.getElementById("premiumPanel").style.display = "none";
-}
-
-function cargarPremium(snap){
-  const cont = document.getElementById("contenedorPremium");
-  cont.innerHTML = "";
+onSnapshot(collection(db,"nfc_links"),snap=>{
+  list.innerHTML="";
 
   snap.forEach(d=>{
-    const data = d.data();
-    const id = d.id.toLowerCase().trim();
-    const link = baseURL + "?id=" + id;
+    const data=d.data();
+    const id=d.id;
 
-    cont.innerHTML += `
-      <div class="card">
-        <h3>${id}</h3>
-        <video src="${data.video || ""}" width="100%" autoplay muted loop></video>
-        <p>${link}</p>
-        <button onclick="guardarVideo('${d.id}')">Cambiar Video</button>
-        <button onclick="reset('${d.id}')">Reset</button>
-      </div>
+    let select = `<select onchange="setVideo('${id}',this.value)">`;
+
+    videos.forEach(v=>{
+      select += `<option value="${v}" ${data.video===v?"selected":""}>${v}</option>`;
+    });
+
+    select += `</select>`;
+
+    list.innerHTML+=`
+    <div class="card">
+      <b>${id}</b><br>
+      🔗 ${baseURL}?id=${id}<br>
+      ✅ ${data.accesos||0} | ❌ ${data.intentos||0}<br><br>
+
+      🎬 ${select}<br><br>
+
+      <video src="videos/${data.video||""}" width="100%" autoplay muted loop></video>
+    </div>
     `;
   });
-}
-
-// 🔥 REALTIME
-onSnapshot(collection(db, "nfc_links"), (snap) => {
-  currentSnap = snap;
-  renderSnapshot(snap);
 });
 
 </script>
