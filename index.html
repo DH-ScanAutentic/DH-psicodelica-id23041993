@@ -14,7 +14,6 @@ html, body {
   overflow: hidden;
 }
 
-/* 🔥 INTRO GIF */
 #intro {
   position: fixed;
   width: 100%;
@@ -31,7 +30,6 @@ html, body {
   object-fit: cover;
 }
 
-/* 🎬 VIDEO FINAL */
 video {
   position: fixed;
   width: 100%;
@@ -40,7 +38,6 @@ video {
   display: none;
 }
 
-/* mensaje audio */
 .mensaje {
   position: fixed;
   bottom: 25px;
@@ -68,15 +65,11 @@ video {
 
 <body>
 
-<!-- 🔥 INTRO GIF -->
 <div id="intro">
-  <img src="intro.gif" alt="intro">
+  <img src="intro.gif">
 </div>
 
-<!-- 🎬 VIDEO PRINCIPAL -->
-<video id="video" autoplay muted playsinline loop>
-  <source src="video.mp4" type="video/mp4">
-</video>
+<video id="video" autoplay muted playsinline loop></video>
 
 <div class="mensaje">Toca para activar audio 🔊</div>
 <div class="status" id="status">Verificando acceso...</div>
@@ -105,36 +98,28 @@ if (!deviceId) {
 
 const status = document.getElementById("status");
 
-/* 🔥 INTRO SUAVE (GIF) */
 function showContent() {
-
   const intro = document.getElementById("intro");
   const video = document.getElementById("video");
   const msg = document.querySelector(".mensaje");
 
   setTimeout(() => {
-
     intro.style.opacity = "0";
 
     setTimeout(() => {
       intro.style.display = "none";
-
       video.style.display = "block";
       msg.style.display = "block";
-
     }, 400);
 
   }, 3000);
 }
 
-/* 🔊 audio */
 function enableVideo() {
-
   const video = document.getElementById("video");
   const msg = document.querySelector(".mensaje");
 
   document.addEventListener("click", () => {
-
     video.muted = false;
     video.play();
 
@@ -146,9 +131,7 @@ function enableVideo() {
   });
 }
 
-/* 🚫 BLOQUEO */
 function bloquear(texto = "ACCESO DENEGADO") {
-
   document.body.style.background = "black";
 
   const bloqueo = document.createElement("div");
@@ -164,7 +147,6 @@ function bloquear(texto = "ACCESO DENEGADO") {
   document.body.appendChild(bloqueo);
 }
 
-/* 🔥 FIREBASE */
 async function check() {
 
   try {
@@ -185,6 +167,12 @@ async function check() {
     }
 
     const data = snap.data();
+    const video = document.getElementById("video");
+
+    // 🔥 VIDEO DINÁMICO
+    const videoURL = data.video || "video.mp4";
+    video.innerHTML = `<source src="${videoURL}" type="video/mp4">`;
+    video.load();
 
     if (!data.device) {
 
@@ -193,11 +181,11 @@ async function check() {
         status: "activo",
         fecha: new Date().toLocaleString(),
         accesos: 1,
-        intentos: 0
+        intentos: 0,
+        video: videoURL
       });
 
       status.innerText = "🟢 Activado";
-
       showContent();
       enableVideo();
       return;
@@ -211,7 +199,6 @@ async function check() {
       });
 
       status.innerText = "🟢 Acceso permitido";
-
       showContent();
       enableVideo();
       return;
