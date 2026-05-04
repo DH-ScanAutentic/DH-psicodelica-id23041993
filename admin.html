@@ -78,6 +78,8 @@ button, select, input {
 
   <input id="nuevoVideo" placeholder="video.mp4">
   <button onclick="agregarVideo()">Agregar Video 🎬</button>
+
+  <button onclick="resetAll()">Reset Todo 🔥</button>
 </div>
 
 <div id="list"></div>
@@ -89,7 +91,7 @@ button, select, input {
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -163,6 +165,38 @@ window.setVideo = async (id, video)=>{
   await setDoc(doc(db,"nfc_links",id),{ video },{merge:true});
 }
 
+// 🔄 RESET INDIVIDUAL
+window.reset = async (id)=>{
+  if(!confirm("Resetear "+id+"?")) return;
+
+  await setDoc(doc(db,"nfc_links",id),{
+    device:"",
+    accesos:0,
+    intentos:0,
+    historial:[],
+    ultimoAcceso:"",
+    video:""
+  });
+}
+
+// 🔥 RESET TOTAL
+window.resetAll = async ()=>{
+  if(!confirm("Resetear TODO?")) return;
+
+  const snap = await getDocs(collection(db,"nfc_links"));
+
+  snap.forEach(async d=>{
+    await setDoc(doc(db,"nfc_links",d.id),{
+      device:"",
+      accesos:0,
+      intentos:0,
+      historial:[],
+      ultimoAcceso:"",
+      video:""
+    });
+  });
+}
+
 window.modoBasico = ()=>{
   list.style.display="block";
   premiumPanel.style.display="none";
@@ -204,17 +238,19 @@ onSnapshot(collection(db,"nfc_links"),snap=>{
       <b>${id}</b><br>
       🔗 ${baseURL}?id=${id}<br>
       ✅ ${data.accesos||0} | ❌ ${data.intentos||0}<br>
-      ${select}
+      ${select}<br><br>
+      <button onclick="reset('${id}')">Reset</button>
     </div>`;
 
-    // pro
+    // pro (🔥 CORREGIDO SIN /videos/)
     proList.innerHTML+=`
     <div class="card">
       <h3>${id}</h3>
       <video class="videoPreview" autoplay muted loop controls>
-        <source src="https://dh-scanautentic.github.io/DH-psicodelica-id23041993/videos/${data.video || 'video.mp4'}" type="video/mp4">
+        <source src="https://dh-scanautentic.github.io/DH-psicodelica-id23041993/${data.video || 'video.mp4'}" type="video/mp4">
       </video>
-      ${select}
+      ${select}<br><br>
+      <button onclick="reset('${id}')">Reset</button>
     </div>`;
 
     // dios
