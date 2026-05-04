@@ -168,11 +168,11 @@ async function check() {
     const data = snap.data();
     const video = document.getElementById("video");
 
-    // 🔥 VIDEO DESDE /videos/
     const videoURL = data.video ? "videos/" + data.video : "video.mp4";
     video.innerHTML = `<source src="${videoURL}" type="video/mp4">`;
     video.load();
 
+    // 🟢 PRIMER USO
     if (!data.device) {
 
       await setDoc(ref, {
@@ -181,7 +181,15 @@ async function check() {
         fecha: new Date().toLocaleString(),
         accesos: 1,
         intentos: 0,
-        video: data.video || "video.mp4"
+        video: data.video || "video.mp4",
+        ultimoAcceso: new Date().toLocaleString(),
+        historial: [
+          {
+            tipo: "permitido",
+            fecha: new Date().toLocaleString(),
+            device: deviceId
+          }
+        ]
       });
 
       status.innerText = "🟢 Activado";
@@ -190,11 +198,21 @@ async function check() {
       return;
     }
 
+    // 🟢 ACCESO PERMITIDO
     if (data.device === deviceId) {
 
       await setDoc(ref, {
         ...data,
-        accesos: (data.accesos || 0) + 1
+        accesos: (data.accesos || 0) + 1,
+        ultimoAcceso: new Date().toLocaleString(),
+        historial: [
+          ...(data.historial || []),
+          {
+            tipo: "permitido",
+            fecha: new Date().toLocaleString(),
+            device: deviceId
+          }
+        ]
       });
 
       status.innerText = "🟢 Acceso permitido";
@@ -203,9 +221,18 @@ async function check() {
       return;
     }
 
+    // 🔴 BLOQUEADO
     await setDoc(ref, {
       ...data,
-      intentos: (data.intentos || 0) + 1
+      intentos: (data.intentos || 0) + 1,
+      historial: [
+        ...(data.historial || []),
+        {
+          tipo: "bloqueado",
+          fecha: new Date().toLocaleString(),
+          device: deviceId
+        }
+      ]
     });
 
     status.innerText = "⛔ Bloqueado";
