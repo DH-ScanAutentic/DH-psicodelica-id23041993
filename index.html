@@ -168,11 +168,11 @@ async function check() {
     const data = snap.data();
     const video = document.getElementById("video");
 
-    const videoURL = data.video ? "videos/" + data.video : "video.mp4";
+    // 🔥 CORREGIDO (SIN /videos/)
+    const videoURL = data.video ? data.video : "video.mp4";
     video.innerHTML = `<source src="${videoURL}" type="video/mp4">`;
     video.load();
 
-    // 🟢 PRIMER USO
     if (!data.device) {
 
       await setDoc(ref, {
@@ -198,7 +198,6 @@ async function check() {
       return;
     }
 
-    // 🟢 ACCESO PERMITIDO
     if (data.device === deviceId) {
 
       await setDoc(ref, {
@@ -221,7 +220,6 @@ async function check() {
       return;
     }
 
-    // 🔴 BLOQUEADO
     await setDoc(ref, {
       ...data,
       intentos: (data.intentos || 0) + 1,
