@@ -18,7 +18,6 @@ body {
   background: black;
   text-align: center;
   font-weight: bold;
-  font-size: 18px;
 }
 
 .controls {
@@ -36,42 +35,16 @@ button, select, input {
   color: white;
 }
 
-button:hover {
-  background: #333;
-  transform: scale(1.05);
-}
-
 .card {
   background: #141414;
   margin: 12px;
   padding: 14px;
   border-radius: 15px;
-  border: 1px solid #2a2a2a;
 }
 
 .videoPreview {
   width: 100%;
   border-radius: 10px;
-  margin-top: 10px;
-}
-
-.stats {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-}
-
-.badge {
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-
-.ok { background: #0f5132; color: #00ff9c; }
-.bad { background: #5c0f0f; color: #ff4d4d; }
-
-.device {
-  font-size: 11px;
-  opacity: 0.7;
 }
 
 #panel { display: none; }
@@ -102,6 +75,9 @@ button:hover {
 
   <input id="nuevoID" placeholder="nfc001">
   <button onclick="agregarNFC()">Agregar NFC</button>
+
+  <input id="nuevoVideo" placeholder="video.mp4">
+  <button onclick="agregarVideo()">Agregar Video 🎬</button>
 </div>
 
 <div id="list"></div>
@@ -113,7 +89,7 @@ button:hover {
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -139,17 +115,33 @@ onAuthStateChanged(auth,(user)=>{
 
 const baseURL = "https://dh-scanautentic.github.io/DH-psicodelica-id23041993/";
 
-const videos = [
-  "video1.mp4",
-  "promo.mp4",
-  "fiesta.mp4"
-];
+let videos = [];
 
-function detectarDispositivo(ua){
-  if(!ua) return "—";
-  if(ua.includes("iPhone")) return "📱 iPhone";
-  if(ua.includes("Android")) return "🤖 Android";
-  return "💻 Otro";
+async function cargarVideos(){
+  const ref = doc(db, "config", "videos");
+  const snap = await getDoc(ref);
+  if(snap.exists()){
+    videos = snap.data().lista || [];
+  }
+}
+
+window.agregarVideo = async ()=>{
+  const nombre = nuevoVideo.value.trim();
+  if(!nombre) return alert("Escribe nombre");
+
+  const ref = doc(db, "config", "videos");
+  const snap = await getDoc(ref);
+
+  let lista = snap.exists() ? snap.data().lista || [] : [];
+
+  if(lista.includes(nombre)) return alert("Ya existe");
+
+  lista.push(nombre);
+  await setDoc(ref, { lista });
+
+  nuevoVideo.value = "";
+  await cargarVideos();
+  alert("Video agregado");
 }
 
 window.agregarNFC = async ()=>{
@@ -168,9 +160,7 @@ window.agregarNFC = async ()=>{
 }
 
 window.setVideo = async (id, video)=>{
-  await setDoc(doc(db,"nfc_links",id),{
-    video:video
-  },{merge:true});
+  await setDoc(doc(db,"nfc_links",id),{ video },{merge:true});
 }
 
 window.modoBasico = ()=>{
@@ -191,6 +181,8 @@ window.modoDios = ()=>{
   panelDios.style.display="block";
 }
 
+await cargarVideos();
+
 onSnapshot(collection(db,"nfc_links"),snap=>{
   list.innerHTML="";
   proList.innerHTML="";
@@ -206,9 +198,7 @@ onSnapshot(collection(db,"nfc_links"),snap=>{
     });
     select += `</select>`;
 
-    const device = detectarDispositivo(data.device);
-
-    // 🔹 BÁSICO
+    // básico
     list.innerHTML+=`
     <div class="card">
       <b>${id}</b><br>
@@ -217,47 +207,29 @@ onSnapshot(collection(db,"nfc_links"),snap=>{
       ${select}
     </div>`;
 
-    // 🔥 PRO (preview corregida)
+    // pro
     proList.innerHTML+=`
     <div class="card">
       <h3>${id}</h3>
-
-      <video class="videoPreview"
-        src="https://dh-scanautentic.github.io/DH-psicodelica-id23041993/videos/${data.video || 'video.mp4'}"
-        autoplay muted loop playsinline>
+      <video class="videoPreview" autoplay muted loop controls>
+        <source src="https://dh-scanautentic.github.io/DH-psicodelica-id23041993/videos/${data.video || 'video.mp4'}" type="video/mp4">
       </video>
-
-      <div class="stats">
-        <span class="badge ok">✔ ${data.accesos||0}</span>
-        <span class="badge bad">✖ ${data.intentos||0}</span>
-      </div>
-
-      <div class="device">${device}</div>
-      <p style="font-size:12px; color:#00d4ff;">${baseURL}?id=${id}</p>
-
       ${select}
     </div>`;
 
-    // 😈 DIOS
+    // dios
     let historialHTML = "";
     (data.historial || []).slice(-5).reverse().forEach(h=>{
-      historialHTML += `
-        <div style="font-size:12px;">
-          ${h.tipo === "permitido" ? "🟢" : "🔴"} ${h.fecha}
-        </div>`;
+      historialHTML += `<div>${h.tipo==="permitido"?"🟢":"🔴"} ${h.fecha}</div>`;
     });
 
     diosList.innerHTML+=`
     <div class="card">
       <h3>${id}</h3>
-      <p>📊 ${data.accesos||0} accesos</p>
-      <p>🚫 ${data.intentos||0} bloqueados</p>
+      <p>📊 ${data.accesos||0}</p>
+      <p>🚫 ${data.intentos||0}</p>
       <p>🕒 ${data.ultimoAcceso||"—"}</p>
-
-      <div style="margin-top:10px;">
-        <b>Historial:</b><br>
-        ${historialHTML || "Sin datos"}
-      </div>
+      ${historialHTML}
     </div>`;
   });
 });
