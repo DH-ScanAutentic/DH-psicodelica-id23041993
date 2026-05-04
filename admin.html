@@ -3,53 +3,110 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DH ADMIN PRO</title>
+<title>DH ADMIN GOD MODE</title>
 
 <style>
-body { margin:0; font-family:Arial; background:#0f0f0f; color:white; }
-.header { padding:15px; background:black; text-align:center; font-weight:bold; }
-.controls { display:flex; gap:10px; padding:10px; flex-wrap:wrap; }
+body {
+  margin: 0;
+  font-family: Arial;
+  background: linear-gradient(135deg,#0f0f0f,#1a1a1a);
+  color: white;
+}
+
+.header {
+  padding: 15px;
+  background: black;
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  flex-wrap: wrap;
+}
 
 button, select, input {
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:#1f1f1f;
-  color:white;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #1f1f1f;
+  color: white;
+}
+
+button:hover {
+  background: #333;
+  transform: scale(1.05);
 }
 
 .card {
-  background:#1a1a1a;
-  margin:10px;
-  padding:12px;
-  border-radius:10px;
+  background: #141414;
+  margin: 12px;
+  padding: 14px;
+  border-radius: 15px;
+  border: 1px solid #2a2a2a;
 }
 
-.link { font-size:12px; color:#00d4ff; }
+.videoPreview {
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 10px;
+}
 
-#panel { display:none; }
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.ok { background: #0f5132; color: #00ff9c; }
+.bad { background: #5c0f0f; color: #ff4d4d; }
+
+.device {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+#panel { display: none; }
+#premiumPanel { display: none; }
+#panelDios { display: none; }
 </style>
 </head>
 
 <body>
 
 <div id="loginBox">
-  <h2>🔐 Login</h2>
-  <input id="email" placeholder="Correo"><br><br>
-  <input id="pass" type="password" placeholder="Contraseña"><br><br>
-  <button onclick="login()">Entrar</button>
+  <h2 style="text-align:center;">🔐 Login</h2>
+  <div style="text-align:center;">
+    <input id="email" placeholder="Correo"><br><br>
+    <input id="pass" type="password" placeholder="Contraseña"><br><br>
+    <button onclick="login()">Entrar</button>
+  </div>
 </div>
 
 <div id="panel">
 
-<div class="header">🚀 DH CONTROL PRO</div>
+<div class="header">🚀 DH CONTROL GOD MODE</div>
 
 <div class="controls">
+  <button onclick="modoBasico()">Básico</button>
+  <button onclick="modoPro()">Pro 🔥</button>
+  <button onclick="modoDios()">Dios 😈</button>
+
   <input id="nuevoID" placeholder="nfc001">
   <button onclick="agregarNFC()">Agregar NFC</button>
 </div>
 
 <div id="list"></div>
+<div id="premiumPanel"><div id="proList"></div></div>
+<div id="panelDios"><div id="diosList"></div></div>
 
 </div>
 
@@ -70,8 +127,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 window.login = async ()=>{
-  await signInWithEmailAndPassword(auth,
-    email.value, pass.value);
+  await signInWithEmailAndPassword(auth, email.value, pass.value);
 }
 
 onAuthStateChanged(auth,(user)=>{
@@ -83,12 +139,18 @@ onAuthStateChanged(auth,(user)=>{
 
 const baseURL = "https://dh-scanautentic.github.io/DH-psicodelica-id23041993/";
 
-// 🎬 LISTA DE VIDEOS (EDITA SOLO AQUÍ)
 const videos = [
   "video1.mp4",
   "promo.mp4",
   "fiesta.mp4"
 ];
+
+function detectarDispositivo(ua){
+  if(!ua) return "—";
+  if(ua.includes("iPhone")) return "📱 iPhone";
+  if(ua.includes("Android")) return "🤖 Android";
+  return "💻 Otro";
+}
 
 window.agregarNFC = async ()=>{
   let id = nuevoID.value.trim();
@@ -98,7 +160,8 @@ window.agregarNFC = async ()=>{
     device:"",
     accesos:0,
     intentos:0,
-    video:""
+    video:"",
+    historial:[]
   });
 
   nuevoID.value="";
@@ -110,32 +173,88 @@ window.setVideo = async (id, video)=>{
   },{merge:true});
 }
 
+window.modoBasico = ()=>{
+  list.style.display="block";
+  premiumPanel.style.display="none";
+  panelDios.style.display="none";
+}
+
+window.modoPro = ()=>{
+  list.style.display="none";
+  premiumPanel.style.display="block";
+  panelDios.style.display="none";
+}
+
+window.modoDios = ()=>{
+  list.style.display="none";
+  premiumPanel.style.display="none";
+  panelDios.style.display="block";
+}
+
 onSnapshot(collection(db,"nfc_links"),snap=>{
   list.innerHTML="";
+  proList.innerHTML="";
+  diosList.innerHTML="";
 
   snap.forEach(d=>{
     const data=d.data();
     const id=d.id;
 
     let select = `<select onchange="setVideo('${id}',this.value)">`;
-
     videos.forEach(v=>{
       select += `<option value="${v}" ${data.video===v?"selected":""}>${v}</option>`;
     });
-
     select += `</select>`;
 
+    const device = detectarDispositivo(data.device);
+
+    // 🔹 BÁSICO
     list.innerHTML+=`
     <div class="card">
       <b>${id}</b><br>
       🔗 ${baseURL}?id=${id}<br>
-      ✅ ${data.accesos||0} | ❌ ${data.intentos||0}<br><br>
+      ✅ ${data.accesos||0} | ❌ ${data.intentos||0}<br>
+      ${select}
+    </div>`;
 
-      🎬 ${select}<br><br>
+    // 🔥 PRO
+    proList.innerHTML+=`
+    <div class="card">
+      <h3>${id}</h3>
+      <video class="videoPreview" src="videos/${data.video||""}" autoplay muted loop></video>
 
-      <video src="videos/${data.video||""}" width="100%" autoplay muted loop></video>
-    </div>
-    `;
+      <div class="stats">
+        <span class="badge ok">✔ ${data.accesos||0}</span>
+        <span class="badge bad">✖ ${data.intentos||0}</span>
+      </div>
+
+      <div class="device">${device}</div>
+      <p style="font-size:12px; color:#00d4ff;">${baseURL}?id=${id}</p>
+
+      ${select}
+    </div>`;
+
+    // 😈 DIOS
+    let historialHTML = "";
+    (data.historial || []).slice(-5).reverse().forEach(h=>{
+      historialHTML += `
+        <div style="font-size:12px;">
+          ${h.tipo === "permitido" ? "🟢" : "🔴"} ${h.fecha}
+        </div>`;
+    });
+
+    diosList.innerHTML+=`
+    <div class="card">
+      <h3>${id}</h3>
+      <p>📊 ${data.accesos||0} accesos</p>
+      <p>🚫 ${data.intentos||0} bloqueados</p>
+      <p>🕒 ${data.ultimoAcceso||"—"}</p>
+
+      <div style="margin-top:10px;">
+        <b>Historial:</b><br>
+        ${historialHTML || "Sin datos"}
+      </div>
+    </div>`;
   });
 });
 
