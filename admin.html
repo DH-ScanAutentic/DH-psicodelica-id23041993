@@ -217,11 +217,15 @@ onSnapshot(collection(db,"nfc_links"),snap=>{
       ${select}
     </div>`;
 
-    // 🔥 PRO
+    // 🔥 PRO (preview corregida)
     proList.innerHTML+=`
     <div class="card">
       <h3>${id}</h3>
-      <video class="videoPreview" src="videos/${data.video||""}" autoplay muted loop></video>
+
+      <video class="videoPreview"
+        src="https://dh-scanautentic.github.io/DH-psicodelica-id23041993/videos/${data.video || 'video.mp4'}"
+        autoplay muted loop playsinline>
+      </video>
 
       <div class="stats">
         <span class="badge ok">✔ ${data.accesos||0}</span>
